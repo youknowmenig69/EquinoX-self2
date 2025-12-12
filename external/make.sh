@@ -105,6 +105,15 @@ GET_SRC_DIR()
     fi
 }
 
+IS_ARCH_GENTOO()
+{
+    if grep -qiE "Arch|Gentoo" "/etc/os-release" 2> /dev/null; then
+        echo "OFF"
+    else
+        echo "ON"
+    fi
+}
+
 # https://github.com/canonical/snapd/blob/ec7ea857712028b7e3be7a5f4448df575216dbfd/release/release.go#L169-L190
 IS_WSL()
 {
@@ -132,6 +141,7 @@ ANDROID_TOOLS=true
 APKTOOL=true
 EROFS_UTILS=true
 IMG2SDAT=true
+MAGISKBOOT=true
 SAMLOADER=true
 SIGNAPK=true
 
@@ -156,6 +166,10 @@ IMG2SDAT_EXEC=(
     "blockimgdiff.py" "common.py" "images.py" "img2sdat" "rangelib.py" "sparse_img.py"
 )
 CHECK_TOOLS "${IMG2SDAT_EXEC[@]}" && IMG2SDAT=false
+MAGISKBOOT_EXEC=(
+    "magiskboot"
+)
+CHECK_TOOLS "${MAGISKBOOT_EXEC[@]}" && MAGISKBOOT=false
 SAMLOADER_EXEC=(
     "../venv/bin/samloader"
 )
@@ -170,6 +184,7 @@ if [[ "$1" == "--check-tools" ]]; then
             ! $APKTOOL && \
             ! $EROFS_UTILS && \
             ! $IMG2SDAT && \
+            ! $MAGISKBOOT && \
             ! $SAMLOADER && \
             ! $SIGNAPK; then
         exit 0
@@ -185,7 +200,7 @@ fi
 if $ANDROID_TOOLS; then
     ANDROID_TOOLS_CMDS=(
         "git submodule foreach --recursive \"git am --abort || true\""
-        "cmake -B \"build\" $(GET_CMAKE_FLAGS) -DANDROID_TOOLS_USE_BUNDLED_FMT=$([ "$GITHUB_ACTIONS" ] && echo "ON" || echo "OFF") -DANDROID_TOOLS_USE_BUNDLED_LIBUSB=ON"
+        "cmake -B \"build\" $(GET_CMAKE_FLAGS) -DANDROID_TOOLS_USE_BUNDLED_FMT=$(IS_ARCH_GENTOO) -DANDROID_TOOLS_USE_BUNDLED_LIBUSB=ON"
         "make -C \"build\" -j\"$(nproc)\""
         "find \"build/vendor\" -maxdepth 1 -type f -exec test -x {} \; -exec cp -a {} \"$TOOLS_DIR/bin\" \;"
         "cp -a \"vendor/avb/avbtool.py\" \"$TOOLS_DIR/bin/avbtool\""
@@ -207,8 +222,6 @@ fi
 if $APKTOOL; then
     APKTOOL_CMDS=(
         "git reset --hard"
-        "git apply \"$SRC_DIR/external/patches/apktool/0001-feat-support-aapt-optimization.patch\""
-        "git apply \"$SRC_DIR/external/patches/apktool/0002-feat-add-DEX-container-format-support.patch\""
         "./gradlew build shadowJar"
         "cp -a \"scripts/linux/apktool\" \"$TOOLS_DIR/bin\""
         "cp -a \"brut.apktool/apktool-cli/build/libs/apktool-cli.jar\" \"$TOOLS_DIR/bin/apktool.jar\""
@@ -218,6 +231,7 @@ if $APKTOOL; then
 fi
 if $EROFS_UTILS; then
     EROFS_UTILS_CMDS=(
+        "git reset --hard"
         "cmake -S \"build/cmake\" -B \"out\" $(GET_CMAKE_FLAGS) -DRUN_ON_WSL=\"$(IS_WSL)\" -DENABLE_FULL_LTO=\"ON\" -DMAX_BLOCK_SIZE=\"4096\""
         "make -C \"out\" -j\"$(nproc)\""
         "find \"out/erofs-tools\" -maxdepth 1 -type f -exec test -x {} \; -exec cp -a {} \"$TOOLS_DIR/bin\" \;"
@@ -232,10 +246,28 @@ if $IMG2SDAT; then
 
     BUILD "img2sdat" "$SRC_DIR/external/img2sdat" "${IMG2SDAT_CMDS[@]}"
 fi
+if $MAGISKBOOT; then
+    case "$(uname -m)" in
+        arm64|aarch64)
+            ARCH="arm64-v8a"
+            ;;
+        amd64|x86_64)
+            ARCH="x86_64"
+            ;;
+    esac
+    MAGISKBOOT_TMP="$(mktemp -d)"
+    MAGISKBOOT_CMDS=(
+        curl -L -s -o "magisk.apk" \ "https://github.com/topjohnwu/Magisk/releases/download/v29.0/Magisk-v29.0.apk"
+        "unzip -q -j \"magisk.apk\" \"lib/$ARCH/libmagiskboot.so\""
+        "mv \"libmagiskboot.so\" \"$TOOLS_DIR/bin/magiskboot\""
+        "chmod +x \"$TOOLS_DIR/bin/magiskboot\""
+    )
+
+    BUILD "magiskboot" "$MAGISKBOOT_TMP" "${MAGISKBOOT_CMDS[@]}"
+    rm -rf "$MAGISKBOOT_TMP"
+fi
 if $SAMLOADER; then
     SAMLOADER_CMDS=(
-        "git reset --hard"
-        "git apply \"$SRC_DIR/external/patches/samloader/0001-Add-timeout-to-version.xml-request.patch\""
         "python3 -m venv \"$TOOLS_DIR/venv\""
         "source \"$TOOLS_DIR/venv/bin/activate\"; pip3 install ."
     )
