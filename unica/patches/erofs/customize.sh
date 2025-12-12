@@ -5,12 +5,6 @@ fi
 
 _LOG() { if $DEBUG; then LOGW "$1"; else ABORT "$1"; fi }
 
-if [[ "$TARGET_OS_FILE_SYSTEM_TYPE" != "erofs" ]]; then
-    _LOG "TARGET_OS_FILE_SYSTEM_TYPE is not set to erofs"
-    unset -f _LOG
-    return 0
-fi
-
 BOOT_FILE="boot.img"
 if [ -f "$WORK_DIR/kernel/vendor_boot.img" ]; then
     BOOT_FILE="vendor_boot.img"
