@@ -49,6 +49,7 @@ overlay/GmsConfigOverlaySearchSelector.apk
 priv-app/SearchSelector
 "
 SYSTEM_DEBLOAT+="
+system/app/MinusOnePage
 system/app/AutomationTest_FB
 system/app/DRParser
 system/app/DictDiotekForSec
