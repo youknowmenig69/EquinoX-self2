@@ -9,15 +9,7 @@ COMPRESS_WEBP()
 
     FILE_PATH="$(dirname "$FILE")"
     FILE_NAME="$(basename "$FILE")"
-
-    if $TARGET_COMMON_SUPPORT_DYN_RESOLUTION_CONTROL; then
-        if [ "$TARGET_PRODUCT_SHIPPING_API_LEVEL" -gt "30" ] && \
-                [ "$TARGET_PRODUCT_SHIPPING_API_LEVEL" -lt "34" ]; then
-            RES="3088"
-        else
-            RES="3120"
-        fi
-    fi
+    RES="3088"
 
     LOG "- Compressing $FILE_NAME"
 
