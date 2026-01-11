@@ -1,4 +1,4 @@
-EUREKA_ZIP="https://github.com/saadelasfur/eureka_releases/releases/download/20251206/Eureka_KSU-Next-v1.1.1_20251206_r9q2.zip"
+EUREKA_ZIP="https://github.com/saadelasfur/eureka_releases/releases/download/20251229/Eureka_KSU-Next-v3.0.0_20251229_r9q2.zip"
 
 [ -d "$TMP_DIR" ] && rm -rf "$TMP_DIR"
 mkdir -p "$TMP_DIR"
