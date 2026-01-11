@@ -56,25 +56,30 @@ ENCODE_MP4()
     CMD+=" -movflags use_metadata_tags -map_metadata 0"
     CMD+=" -vf \"fps=60,scale=$RES,setsar=1:1\""
     CMD+=" -video_track_timescale 360000 -movie_timescale 90000"
-    CMD+=" \"$FILE_PATH/temp.mp4\""
+    CMD+=" \"$FILE_PATH/temp-$FILE_NAME.mp4\""
 
     EVAL "$CMD" || return 1
-    EVAL "mv -f \"$FILE_PATH/temp.mp4\" \"$FILE_PATH/$FILE_NAME\"" || return 1
+    EVAL "mv -f \"$FILE_PATH/temp-$FILE_NAME.mp4\" \"$FILE_PATH/$FILE_NAME\"" || return 1
 }
 # ]
 
-WALLPAPER_APK="https://github.com/youknowmenig69/Equinox-ROM-ui8/releases/download/v2.0/wallpaper-res.apk"
+WALLPAPER_APK="https://github.com/youknowmenig69/Equinox-ROM-ui8/releases/download/v3.0/wallpaper-res.apk"
 WALLPAPER_PATH="system/priv-app/wallpaper-res/wallpaper-res.apk"
 DOWNLOAD_FILE "$WALLPAPER_APK" "$WORK_DIR/system/$WALLPAPER_PATH"
 DECODE_APK "system" "system/priv-app/wallpaper-res/wallpaper-res.apk"
 for f in "$APKTOOL_DIR/system/priv-app/wallpaper-res/wallpaper-res.apk/res/drawable-nodpi/dex_wallpaper_"*.webp; do
     COMPRESS_WEBP "$f"
 done
-for f in "$APKTOOL_DIR/system/priv-app/wallpaper-res/wallpaper-res.apk/res/drawable-nodpi/wallpaper_"*.webp; do
+for f in "$APKTOOL_DIR/system/priv-app/wallpaper-res/wallpaper-res.apk/res/drawable-nodpi/Wallpaper_"*.webp; do
     COMPRESS_WEBP "$f"
 done
-for f in "$APKTOOL_DIR/system/priv-app/wallpaper-res/wallpaper-res.apk/res/raw/video_"*.mp4; do
-    ENCODE_MP4 "$f"
+for f in "$APKTOOL_DIR/system/priv-app/wallpaper-res/wallpaper-res.apk/res/raw/E3_Infinite_Video_Wallpaper_"*.mp4; do
+    ENCODE_MP4 "$f" &
 done
+
+
+# shellcheck disable=SC2046
+wait $(jobs -p) || return 1
+
 
 unset -f ENCODE_MP4 COMPRESS_WEBP
