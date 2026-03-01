@@ -80,12 +80,8 @@ jobs:
       - name: Build ROM
         run: |
           source ./buildenv.sh ${{ matrix.target }}
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]] && \
-              [[ "${{ github.ref }}" == "refs/heads/paradigm" ]]; then
-              ./scripts/make_rom.sh
-          else
-              ./scripts/make_rom.sh --no-rom-zip
-          fi
+          ./scripts/make_rom.sh
+          
       - name: Download PixelDrain CLI (pd)
         run: |
           curl -L https://github.com/jkawamoto/go-pixeldrain/releases/download/v0.7.6/pd_0.7.6_linux_amd64.tar.gz -o pd.tar.gz
@@ -97,8 +93,7 @@ jobs:
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
-          cd "$OUT_DIR"
-          ROM_FILE=$(ls *.zip | head -n 1)
+          ROM_FILE=$(find out -maxdepth 1 -type f -name "*.zip" | head -n 1)
 
           if [ -z "$ROM_FILE" ]; then
             echo "No ROM zip found!"
