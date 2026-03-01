@@ -97,7 +97,7 @@ jobs:
         env:
           PIXELDRAIN_API_KEY: ${{ secrets.PIXELDRAIN_API_KEY }}
         run: |
-          cd out
+          cd $(OUT_DIR)
           ROM_FILE=$(ls *.zip | head -n 1)
 
           if [ -z "$ROM_FILE" ]; then
